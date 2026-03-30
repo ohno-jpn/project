@@ -1,0 +1,25 @@
+# ── OS ──────────────────────
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+Desktop.ini
+
+# ── Python ──────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# ── 仮想環境 ─────────────────
+.venv/
+venv/
+ENV/
+env/
+
+# ── 秘密情報 ─────────────────
+.env
+.env.*
+
+# ── 出力ファイル（キャプチャ画像・PDF）──
+output/

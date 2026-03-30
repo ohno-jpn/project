@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pomodoro Timer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">POMODORO</h1>
+
+    <div class="mode-tabs">
+      <button class="tab active" data-mode="pomodoro">Pomodoro</button>
+      <button class="tab" data-mode="short">Short Break</button>
+      <button class="tab" data-mode="long">Long Break</button>
+    </div>
+
+    <div class="timer-wrapper">
+      <svg class="progress-ring" viewBox="0 0 220 220">
+        <circle class="ring-bg" cx="110" cy="110" r="96"/>
+        <circle class="ring-progress" id="ring" cx="110" cy="110" r="96"/>
+      </svg>
+      <div class="timer-display">
+        <span id="time">25:00</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-start" id="startBtn">START</button>
+      <button class="btn btn-stop" id="stopBtn">STOP</button>
+      <button class="btn btn-reset" id="resetBtn">RESET</button>
+    </div>
+
+    <div class="session-info">
+      <span class="session-label">SESSION</span>
+      <div class="dots" id="dots">
+        <span class="dot active"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+      </div>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
