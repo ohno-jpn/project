@@ -1,12 +1,23 @@
-# ── OS ────────────────────────────────────────────
+# ── Mac固有 ────────────────────────────────────────
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
+.AppleDouble
+.LSOverride
+Icon
+.fseventsd
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# ── Windows固有 ────────────────────────────────────
 Thumbs.db
-Desktop.ini
 ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
 
 # ── Python ────────────────────────────────────────
 __pycache__/

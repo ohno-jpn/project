@@ -1,7 +1,37 @@
+# ── Mac固有 ──────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+Icon
+
+# ── Windows固有 ──────────────────────────────────
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ── Python ───────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# ── 仮想環境 ─────────────────────────────────────
+venv/
+.venv/
+ENV/
+env/
+
+# ── アプリのデータフォルダ（画像・出力物） ────────────
 uploads/
 previews/
 batch_output/
 Output/
-venv/
-__pycache__/
-*.pyc
+
+# ── 秘密情報 ─────────────────────────────────────
+.env
+.env.*
+secrets.*
