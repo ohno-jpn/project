@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, LabelList,
 } from "recharts";
 import { ChevronLeft } from "lucide-react";
 
@@ -23,6 +23,7 @@ interface BarEntry {
   startDate: string;
   endDate: string;
   z1: number; z2: number; z3: number; z4: number; z5: number;
+  highZone: number;
   totalSec: number;
   actCount: number;
 }
@@ -88,7 +89,7 @@ function buildBars(
 
     const total = secs.reduce((s, v) => s + v, 0);
     const pct   = secs.map(s => total > 0 ? Math.round(s / total * 1000) / 10 : 0);
-    return { label, startDate, endDate, z1: pct[0], z2: pct[1], z3: pct[2], z4: pct[3], z5: pct[4], totalSec: total, actCount: acts.length };
+    return { label, startDate, endDate, z1: pct[0], z2: pct[1], z3: pct[2], z4: pct[3], z5: pct[4], highZone: Math.round((pct[3] + pct[4]) * 10) / 10, totalSec: total, actCount: acts.length };
   });
 }
 
@@ -98,7 +99,7 @@ function BarCustomTooltip({ active, payload, label }: { active?: boolean; payloa
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-lg px-3 py-2 text-xs">
       <p className="font-bold text-gray-700 mb-2">{label}</p>
-      {payload.filter(p => p.value > 0).map((p, i) => (
+      {[...payload].reverse().filter(p => p.value > 0).map((p, i) => (
         <div key={i} className="flex items-center gap-2 mb-0.5">
           <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: ZONE_COLORS[Number(p.name.replace("z","")) - 1] }} />
           <span className="text-gray-600">{ZONE_LABELS[Number(p.name.replace("z","")) - 1]}</span>
@@ -244,9 +245,17 @@ export default function HrZonesTrendPage() {
                         domain={[0, 100]}
                       />
                       <Tooltip content={<BarCustomTooltip />} />
-                      {[1,2,3,4,5].map(z => (
+                      {[1,2,3,4].map(z => (
                         <Bar key={z} dataKey={`z${z}`} stackId="a" fill={ZONE_COLORS[z-1]} />
                       ))}
+                      <Bar dataKey="z5" stackId="a" fill={ZONE_COLORS[4]}>
+                        <LabelList
+                          dataKey="highZone"
+                          position="top"
+                          formatter={(v) => Number(v) > 0 ? `${v}%` : ""}
+                          style={{ fontSize: 9, fill: "#f87171", fontWeight: 700 }}
+                        />
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
