@@ -173,15 +173,19 @@ export default function HrZonesPage() {
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
                   <Pie
-                    data={summary.filter(s => s.total_seconds > 0)}
+                    data={[...summary.filter(s => s.total_seconds > 0)].reverse()}
                     dataKey="total_seconds"
                     cx="50%"
                     cy="50%"
                     innerRadius={55}
                     outerRadius={85}
                     paddingAngle={2}
+                    startAngle={90}
+                    endAngle={-270}
                   >
-                    {summary.map((_, i) => <Cell key={i} fill={ZONE_COLORS[i]} />)}
+                    {[...summary.filter(s => s.total_seconds > 0)].reverse().map((s) => (
+                      <Cell key={s.zone} fill={ZONE_COLORS[s.zone - 1]} />
+                    ))}
                   </Pie>
                   <PieTooltip content={<PieCustomTooltip />} />
                 </PieChart>
@@ -189,10 +193,10 @@ export default function HrZonesPage() {
 
               {/* 凡例 */}
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-2">
-                {summary.map((s, i) => (
+                {[...summary].reverse().map((s) => (
                   <div key={s.zone} className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: ZONE_COLORS[i] }} />
-                    <span className="text-xs text-gray-600 truncate">{ZONE_LABELS[i]}</span>
+                    <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: ZONE_COLORS[s.zone - 1] }} />
+                    <span className="text-xs text-gray-600 truncate">{ZONE_LABELS[s.zone - 1]}</span>
                     <span className="text-xs font-semibold text-gray-800 ml-auto">{s.percentage}%</span>
                   </div>
                 ))}
@@ -203,13 +207,13 @@ export default function HrZonesPage() {
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <h2 className="font-bold text-gray-900 mb-4">ゾーン別詳細</h2>
               <div className="space-y-4">
-                {summary.map((s, i) => (
+                {[...summary].reverse().map((s) => (
                   <div key={s.zone}>
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ZONE_COLORS[i] }} />
-                        <span className="text-sm font-semibold text-gray-800">{ZONE_LABELS[i]}</span>
-                        <span className="text-xs text-gray-400">{ZONE_DESC[i]}</span>
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ZONE_COLORS[s.zone - 1] }} />
+                        <span className="text-sm font-semibold text-gray-800">{ZONE_LABELS[s.zone - 1]}</span>
+                        <span className="text-xs text-gray-400">{ZONE_DESC[s.zone - 1]}</span>
                       </div>
                       <div className="text-right">
                         <span className="text-sm font-bold text-gray-900">{s.percentage}%</span>
@@ -219,7 +223,7 @@ export default function HrZonesPage() {
                     <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-700"
-                        style={{ width: `${s.percentage}%`, backgroundColor: ZONE_COLORS[i] }}
+                        style={{ width: `${s.percentage}%`, backgroundColor: ZONE_COLORS[s.zone - 1] }}
                       />
                     </div>
                   </div>
