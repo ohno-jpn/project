@@ -59,40 +59,41 @@ function fmtMin(sec: number) {
 }
 
 // 基準日 + レンジ → from/to を計算
+// すべて「基準日を終点、レンジ分遡った日を始点」
 function calcDateRange(base: string, range: RangeType): { from: string; to: string } {
   const d = new Date(base);
   const fmt = (dt: Date) => dt.toISOString().slice(0, 10);
 
   switch (range) {
     case "activity": {
+      // 直近アクティビティ表示用: 1年前〜基準日
       const from = new Date(d); from.setFullYear(from.getFullYear() - 1);
       return { from: fmt(from), to: base };
     }
-    case "day":
+    case "day": {
+      // 基準日の1日のみ
       return { from: base, to: base };
+    }
     case "week": {
-      const from = new Date(d);
-      const dow = from.getDay(); // 0=Sun
-      const diff = dow === 0 ? -6 : 1 - dow; // Monday
-      from.setDate(from.getDate() + diff);
-      const to = new Date(from); to.setDate(to.getDate() + 6);
-      return { from: fmt(from), to: fmt(to) };
+      // 基準日から7日前〜基準日
+      const from = new Date(d); from.setDate(from.getDate() - 6);
+      return { from: fmt(from), to: base };
     }
     case "month": {
-      const from = new Date(d.getFullYear(), d.getMonth(), 1);
-      const to   = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-      return { from: fmt(from), to: fmt(to) };
+      // 基準日から1ヶ月前〜基準日
+      const from = new Date(d); from.setMonth(from.getMonth() - 1); from.setDate(from.getDate() + 1);
+      return { from: fmt(from), to: base };
     }
     case "3month": {
-      const from = new Date(d); from.setMonth(from.getMonth() - 3);
+      const from = new Date(d); from.setMonth(from.getMonth() - 3); from.setDate(from.getDate() + 1);
       return { from: fmt(from), to: base };
     }
     case "6month": {
-      const from = new Date(d); from.setMonth(from.getMonth() - 6);
+      const from = new Date(d); from.setMonth(from.getMonth() - 6); from.setDate(from.getDate() + 1);
       return { from: fmt(from), to: base };
     }
     case "year": {
-      const from = new Date(d); from.setFullYear(from.getFullYear() - 1);
+      const from = new Date(d); from.setFullYear(from.getFullYear() - 1); from.setDate(from.getDate() + 1);
       return { from: fmt(from), to: base };
     }
   }
