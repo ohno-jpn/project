@@ -65,11 +65,10 @@ export default function DashboardPage() {
         <div className="max-w-4xl mx-auto px-6 h-14 flex items-center justify-between">
           <span className="font-bold text-orange-500 text-lg tracking-tight">RunningCoach</span>
           <nav className="flex items-center gap-4 text-sm font-medium text-gray-500">
-            <a href="/goal" className="hover:text-gray-900 transition-colors">目標・計画</a>
-            <a href="/log/new" className="hover:text-gray-900 transition-colors">記録</a>
-            <a href="/history" className="hover:text-gray-900 transition-colors">履歴</a>
-            <a href="/advice" className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded-full transition-colors">
-              今日の提案
+            <a href="/activities" className="hover:text-gray-900 transition-colors">一覧</a>
+            <a href="/analysis/hr-zones" className="hover:text-gray-900 transition-colors">心拍ゾーン</a>
+            <a href="/analysis/hr-zones/trend" className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded-full transition-colors">
+              トレンド
             </a>
           </nav>
         </div>
