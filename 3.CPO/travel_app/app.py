@@ -113,6 +113,15 @@ def reverse_geocode(lat, lon):
             data = json.loads(res.read().decode())
             addr = data.get('address', {})
             city = addr.get('city') or addr.get('town') or addr.get('village') or ''
+
+            # 都道府県：state → province → display_name の順でフォールバック
+            state = addr.get('state') or addr.get('province') or ''
+            if not state:
+                for part in data.get('display_name', '').split(', '):
+                    if part.endswith(('都', '道', '府', '県')):
+                        state = part
+                        break
+
             detail_parts = [
                 addr.get('suburb', ''),
                 addr.get('quarter', ''),
@@ -124,7 +133,7 @@ def reverse_geocode(lat, lon):
             return {
                 'country': addr.get('country', ''),
                 'postcode': addr.get('postcode', ''),
-                'state': addr.get('state', ''),
+                'state': state,
                 'city': city,
                 'detail': detail,
             }
