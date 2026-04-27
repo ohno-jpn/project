@@ -1,0 +1,11 @@
+# サーバー接続情報（パスワード等）はコミットしない
+ops/server-info.md
+ops/*.env
+
+# WordPressバックアップファイル（容量が大きいため）
+wordpress/backups/*.sql
+wordpress/backups/*.zip
+
+# OS生成ファイル
+.DS_Store
+Thumbs.db
