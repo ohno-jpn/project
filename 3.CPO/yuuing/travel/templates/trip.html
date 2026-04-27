@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% block title %}{{ trip.title }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-1">
+  <div>
+    <h2 class="mb-0">{{ trip.title }}</h2>
+    {% if trip.folder_date %}
+    <p class="text-muted mb-0">
+      <i class="bi bi-calendar3"></i> {{ trip.folder_date.strftime('%Y年%m月%d日') }}
+    </p>
+    {% endif %}
+  </div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#tripEditModal">
+      <i class="bi bi-pencil-square"></i> 旅行を編集
+    </button>
+    <a href="{{ url_for('select_photos', trip_id=trip.id) }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-images"></i> 写真を選び直す
+    </a>
+    <a href="{{ url_for('map_view') }}" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-map"></i> 日本地図へ
+    </a>
+    <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal">
+      <i class="bi bi-trash3"></i> 削除
+    </button>
+  </div>
+</div>
+
+{% if trip.description %}
+<div class="card bg-light border-0 mb-4 mt-3">
+  <div class="card-body py-3">
+    <p class="mb-0" style="white-space: pre-wrap;">{{ trip.description }}</p>
+  </div>
+</div>
+{% endif %}
+
+{% if selected %}
+<h4 class="mt-4 mb-3"><i class="bi bi-star-fill text-warning"></i> 思い出の5枚</h4>
+<div class="row g-4">
+  {% for photo in selected %}
+  <div class="col-md-6">
+    <div class="card shadow-sm h-100">
+      <img src="{{ url_for('serve_photo', trip_id=trip.id, filename=photo.filename) }}"
+           class="card-img-top trip-photo" alt="{{ photo.filename }}">
+      <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <p class="card-title fw-bold mb-0 text-truncate me-2" title="{{ photo.filename }}">
+            <i class="bi bi-image"></i> {{ photo.filename }}
+          </p>
+          <button class="btn btn-outline-secondary btn-sm flex-shrink-0"
+                  onclick="openPhotoEdit({{ photo.id }}, '{{ photo.prefecture }}', '{{ photo.city }}', '{{ photo.country }}')">
+            <i class="bi bi-pencil"></i> 場所を編集
+          </button>
+        </div>
+        <table class="table table-sm table-borderless mb-0 exif-table">
+          <tbody>
+            <tr>
+              <th class="text-muted pe-3" style="width:40%">撮影日時</th>
+              <td>{{ photo.datetime_taken or '情報なし' }}</td>
+            </tr>
+            <tr>
+              <th class="text-muted">都道府県</th>
+              <td>
+                {% if photo.prefecture %}
+                  {{ photo.prefecture }}
+                {% else %}
+                  <span class="text-danger">未取得</span>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <th class="text-muted">市区町村</th>
+              <td>{{ photo.city or '情報なし' }}</td>
+            </tr>
+            <tr>
+              <th class="text-muted">国</th>
+              <td>{{ photo.country or '情報なし' }}</td>
+            </tr>
+            <tr>
+              <th class="text-muted">GPS（緯度）</th>
+              <td>{{ '%.6f'|format(photo.latitude) if photo.latitude is not none else '情報なし' }}</td>
+            </tr>
+            <tr>
+              <th class="text-muted">GPS（経度）</th>
+              <td>{{ '%.6f'|format(photo.longitude) if photo.longitude is not none else '情報なし' }}</td>
+            </tr>
+            <tr>
+              <th class="text-muted">GPS（高度）</th>
+              <td>{{ photo.altitude or '情報なし' }}</td>
+            </tr>
+            <tr>
+              <th class="text-muted">撮影機材</th>
+              <td>{{ photo.camera or '情報なし' }}</td>
+            </tr>
+            {% if photo.latitude and photo.longitude %}
+            <tr>
+              <th class="text-muted">Google Map</th>
+              <td>
+                <a href="https://maps.google.com/?q={{ photo.latitude }},{{ photo.longitude }}"
+                   target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm py-0">
+                  <i class="bi bi-geo-alt"></i> 開く
+                </a>
+              </td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="alert alert-warning mt-4">
+  <i class="bi bi-exclamation-triangle"></i> まだ写真が選択されていません。
+  <a href="{{ url_for('select_photos', trip_id=trip.id) }}">5枚を選択してください</a>
+</div>
+{% endif %}
+
+<div class="mt-4 d-flex gap-2">
+  <a href="{{ url_for('trip_list') }}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> 旅行一覧
+  </a>
+  <a href="{{ url_for('map_view') }}" class="btn btn-outline-primary">
+    <i class="bi bi-map"></i> 日本地図で見る
+  </a>
+</div>
+
+
+<!-- ========== 旅行編集モーダル ========== -->
+<div class="modal fade" id="tripEditModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('edit_trip', trip_id=trip.id) }}">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-pencil-square"></i> 旅行情報を編集</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-bold">旅行タイトル</label>
+            <input type="text" name="title" class="form-control"
+                   value="{{ trip.title }}" maxlength="100" required>
+          </div>
+          <div class="mb-1">
+            <label class="form-label fw-bold">説明文</label>
+            <textarea name="description" class="form-control" rows="5">{{ trip.description }}</textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check2"></i> 保存する
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- ========== 削除確認モーダル ========== -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title text-danger">
+          <i class="bi bi-exclamation-triangle-fill"></i> 旅行を削除しますか？
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body pt-0">
+        <p class="mb-2">以下の旅行と関連する写真データをすべて削除します。</p>
+        <div class="alert alert-warning py-2">
+          <strong>{{ trip.title }}</strong>
+        </div>
+        <small class="text-muted">この操作は取り消せません。</small>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+        <form method="post" action="{{ url_for('delete_trip', trip_id=trip.id) }}">
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-trash3"></i> 削除する
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ========== 写真場所編集モーダル ========== -->
+<div class="modal fade" id="photoEditModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post" id="photoEditForm">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-geo-alt"></i> 場所情報を編集</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-bold">都道府県</label>
+            <input type="text" name="prefecture" id="editPrefecture" class="form-control"
+                   placeholder="例：千葉県" list="prefList">
+            <datalist id="prefList">
+              {% for p in ['北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県',
+                           '茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県',
+                           '新潟県','富山県','石川県','福井県','山梨県','長野県','岐阜県',
+                           '静岡県','愛知県','三重県','滋賀県','京都府','大阪府','兵庫県',
+                           '奈良県','和歌山県','鳥取県','島根県','岡山県','広島県','山口県',
+                           '徳島県','香川県','愛媛県','高知県','福岡県','佐賀県','長崎県',
+                           '熊本県','大分県','宮崎県','鹿児島県','沖縄県'] %}
+              <option value="{{ p }}">
+              {% endfor %}
+            </datalist>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">市区町村</label>
+            <input type="text" name="city" id="editCity" class="form-control"
+                   placeholder="例：千葉市">
+          </div>
+          <div class="mb-1">
+            <label class="form-label fw-bold">国</label>
+            <input type="text" name="country" id="editCountry" class="form-control"
+                   placeholder="例：日本">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check2"></i> 保存する
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openPhotoEdit(photoId, prefecture, city, country) {
+  document.getElementById('editPrefecture').value = prefecture;
+  document.getElementById('editCity').value       = city;
+  document.getElementById('editCountry').value    = country;
+  document.getElementById('photoEditForm').action =
+    '/trips/{{ trip.id }}/photos/' + photoId + '/edit';
+  new bootstrap.Modal(document.getElementById('photoEditModal')).show();
+}
+</script>
+{% endblock %}
