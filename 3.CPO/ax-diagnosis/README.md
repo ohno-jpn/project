@@ -4,30 +4,29 @@
 
 ## 概要
 
-「組織Hard領域」「組織Soft領域」「個人Hard領域」「個人Soft領域」の4領域でスコアリングし、自社のAX成熟度を可視化します。診断結果に基づき、優先的に取り組むべき改善アクションを提示します。
+「OH 組織Hard」「OS 組織Soft」「PH 個人Hard」「PS 個人Soft」の4軸でスコアリングし、自社・自身のAX成熟度を可視化します。診断結果に基づき、優先的に取り組むべき改善アクションを提示します。
 
 ## 診断の深度（Depth）
 
-診断は深度（Depth）で3段階に分かれています。LevelはなくDepthという表現を使います。
+| 深度 | 名称 | 問数 | 形式 | 内容 |
+|------|------|------|------|------|
+| Depth 1 | Hook | 4問 | 状態選択 / クイズ | 各軸1問で現状を素早く把握 |
+| Depth 2 | Checkup | 16問 | 状態選択 / クイズ | 各軸4問でサブ領域を診断 |
+| Depth 3 | Biopsy | 64問 | リッカート5段階 / クイズ | 各軸16問で詳細診断 |
+| Depth 4 | Lab | 16問 | リッカート5段階 / クイズ | Checkup各項目の追加検証問題 |
 
-| 深度 | 名称 | 問数 | 所要時間 | 内容 |
-|------|------|------|----------|------|
-| Depth 1 | Hook | 4問 | 約2分 | 各領域1問のシナリオ選択で現状を素早く把握 |
-| Depth 2 | Checkup | 16問 | 約8分 | 各領域4問のシナリオ選択＋知識問題 |
-| Depth 3 | Biopsy | 64問 | 約20分 | Likert尺度＋知識問題で詳細診断 |
-
-## 4領域フレームワーク
+## 4軸フレームワーク
 
 横軸：組織（左）/ 個人（右）、縦軸：Hard（上）/ Soft（下）の4象限構造です。
 
 ```
               組織                      個人
          ┌──────────────────────┬──────────────────────┐
-  Hard   │ 組織Hard領域          │ 個人Hard領域          │
+  Hard   │ OH 組織Hard           │ PH 個人Hard           │
   （上）  │ 戦略・KGI・ガバナンス │ テクニカルスキル      │
-         │ データ基盤・プロセス  │ プロンプト・RAG実装   │
+         │ データ基盤・プロセス  │ AI知識・リスク管理    │
          ├──────────────────────┼──────────────────────┤
-  Soft   │ 組織Soft領域          │ 個人Soft領域          │
+  Soft   │ OS 組織Soft           │ PS 個人Soft           │
   （下）  │ 挑戦文化・機敏性      │ 課題設定力・目的志向  │
          │ HR評価・ナレッジ共有  │ 批判的思考・開放性    │
          └──────────────────────┴──────────────────────┘
@@ -52,15 +51,21 @@ Level 5が最上位。スコアに応じて5段階で評価します。
 | `/` | LP（ヒーロー・ペイン・ソリューション・料金表） |
 | `/diagnosis` | 診断画面（Depth選択 → 質問 → 回答） |
 | `/diagnosis/result` | 結果画面（総合スコア・ヒートマップ・領域別リング・アドバイス） |
+| `/level-definitions/hook` | Hook レベル定義一覧（H-01〜H-04、Level 5→1） |
+| `/level-definitions/checkup` | Checkup レベル定義一覧（C-01〜C-16、軸別グループ、Level 5→1） |
+| `/questions/hook/oh` | OH設問一覧（Depth 1〜4: Hook / Checkup / Biopsy / Lab） |
+| `/questions/hook/os` | OS設問一覧（Depth 1〜4: Hook / Checkup / Biopsy / Lab） |
+| `/questions/hook/ph` | PH設問一覧（Depth 1〜4: Hook / Checkup / Biopsy / Lab） |
+| `/questions/hook/ps` | PS設問一覧（Depth 1〜4: Hook / Checkup / Biopsy / Lab） |
+| `/questions/checkup` | Checkup設問一覧（全16問・軸別グループ） |
 
 ## 技術スタック
 
-- **フレームワーク**: Next.js 16 (App Router)
+- **フレームワーク**: Next.js 16 (App Router, Turbopack)
 - **言語**: TypeScript
 - **スタイリング**: Tailwind CSS v4
 - **UIコンポーネント**: shadcn/ui、@base-ui/react
 - **アイコン**: lucide-react
-- **トースト通知**: sonner
 - **認証**: Clerk（@clerk/nextjs インストール済み・実装予定）
 - **データベース**: Supabase（@supabase/supabase-js インストール済み・実装予定）
 
@@ -69,18 +74,41 @@ Level 5が最上位。スコアに応じて5段階で評価します。
 ```
 ax-diagnosis/
 ├── app/
-│   ├── layout.tsx            # ルートレイアウト
-│   ├── page.tsx              # ランディングページ（LP）
-│   └── diagnosis/
-│       ├── page.tsx          # 診断画面（Depth選択→質問フロー）
-│       └── result/
-│           └── page.tsx      # 診断結果ページ（ヒートマップ・スコア・アドバイス）
+│   ├── layout.tsx
+│   ├── page.tsx                          # ランディングページ（LP）
+│   ├── diagnosis/
+│   │   ├── page.tsx                      # 診断画面
+│   │   └── result/page.tsx               # 診断結果ページ
+│   ├── level-definitions/
+│   │   ├── hook/page.tsx                 # Hook レベル定義
+│   │   └── checkup/page.tsx              # Checkup レベル定義
+│   └── questions/
+│       ├── checkup/page.tsx              # Checkup 設問一覧（全16問）
+│       └── hook/
+│           ├── oh/page.tsx               # OH 設問一覧（Depth 1〜4）
+│           ├── os/page.tsx               # OS 設問一覧（Depth 1〜4）
+│           ├── ph/page.tsx               # PH 設問一覧（Depth 1〜4）
+│           └── ps/page.tsx               # PS 設問一覧（Depth 1〜4）
 ├── lib/
-│   ├── questions.ts          # 診断データ・スコアリングロジック
+│   ├── question-reference-data.ts        # 全設問データ（Hook/Checkup/Biopsy/Lab）
+│   ├── questions.ts                      # 診断データ・スコアリングロジック
 │   └── utils.ts
 └── components/
-    └── ui/                   # shadcn/ui コンポーネント
+    └── ui/                               # shadcn/ui コンポーネント
 ```
+
+## 設問データ構造（`lib/question-reference-data.ts`）
+
+各軸ごとに以下をエクスポートしています。
+
+| エクスポート | 型 | 内容 |
+|-------------|-----|------|
+| `OH_HOOK` / `OS_HOOK` / `PH_HOOK` / `PS_HOOK` | `QuestionEntry` | 各軸のHook問（1問） |
+| `OH_CHECKUP` / ... | `QuestionEntry[]` | 各軸のCheckup問（4問） |
+| `OH_BIOPSY` / ... | `{ area: string; questions: QuestionEntry[] }[]` | 各軸のBiopsy問（16問・エリア別） |
+| `OH_LAB` / ... | `{ area: string; questions: QuestionEntry[] }[]` | 各軸のLab問（4問・Checkup項目対応） |
+
+設問フォーマット: `"state"` 状態選択 / `"quiz-single"` クイズ単一 / `"quiz-multi"` クイズ複数 / `"likert"` リッカート
 
 ## ローカル開発
 

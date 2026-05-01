@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { BarChart3, RotateCcw } from "lucide-react";
 import { AXIS_LABELS, AXIS_DESC, type Axis } from "@/lib/questions";
+import { saveDiagnosis } from "@/lib/db/diagnoses";
 
 type Level = 1 | 2 | 3;
 
@@ -79,11 +80,32 @@ const AXIS_ADVICE: Record<Axis, (score: number) => string> = {
 export default function DiagnosisResultPage() {
   const [result, setResult] = useState<DiagnosisResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const saved = useRef(false);
 
   useEffect(() => {
     const raw = localStorage.getItem("ax_diagnosis_result");
     if (raw) {
-      try { setResult(JSON.parse(raw)); } catch { /* ignore */ }
+      try {
+        const parsed: DiagnosisResult = JSON.parse(raw);
+        setResult(parsed);
+
+        if (!saved.current) {
+          saved.current = true;
+          const depthMap: Record<Level, "hook" | "checkup" | "biopsy"> = { 1: "hook", 2: "checkup", 3: "biopsy" };
+          const rawAnswers = localStorage.getItem("ax_diagnosis_answers");
+          const answers: Record<string, string> = rawAnswers ? JSON.parse(rawAnswers) : {};
+          saveDiagnosis({
+            depth: depthMap[parsed.level],
+            scores: {
+              org_hard: parsed.axisScores.org_hard,
+              org_soft: parsed.axisScores.org_soft,
+              ind_hard: parsed.axisScores.ind_hard,
+              ind_soft: parsed.axisScores.ind_soft,
+            },
+            answers,
+          }).catch(() => {/* 未ログイン時は無視 */});
+        }
+      } catch { /* ignore */ }
     }
     setLoading(false);
   }, []);
