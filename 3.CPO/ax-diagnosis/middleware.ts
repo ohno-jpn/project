@@ -5,6 +5,8 @@ const isProtectedRoute = createRouteMatcher([
   "/diagnosis(.*)",
 ]);
 
+// /push/[token] はメールリンクから認証なしでアクセス可能
+
 export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) await auth.protect();
 });

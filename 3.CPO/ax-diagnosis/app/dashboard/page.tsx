@@ -8,6 +8,10 @@ const DEPTH_LABEL: Record<string, string> = {
   hook: "Hook（4問）",
   checkup: "Checkup（16問）",
   biopsy: "Biopsy（64問）",
+  "push-OH": "プッシュ OH",
+  "push-OS": "プッシュ OS",
+  "push-PH": "プッシュ PH",
+  "push-PS": "プッシュ PS",
 };
 
 const SCORE_LEVEL = (score: number | null) => {
@@ -39,6 +43,7 @@ export default async function DashboardPage() {
           <div className="flex items-center gap-4">
             <a href="/questions/hook/oh" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">設問</a>
             <a href="/level-definitions/hook" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">レベル定義</a>
+            <a href="/dashboard/settings" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">プッシュ設定</a>
             <a href="/diagnosis" className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-1.5 rounded-full transition-colors">診断を開始</a>
             <UserButton />
           </div>
