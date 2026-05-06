@@ -1,8 +1,9 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { UserButton } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 import { getPushSettings, upsertPushSetting } from "@/lib/db/push-settings";
 import type { PushAxis } from "@/lib/db/push-settings";
+import { sendPushEmail } from "@/lib/push-sender";
 import { SettingsForm } from "./settings-form";
 
 export default async function SettingsPage() {
@@ -23,26 +24,17 @@ export default async function SettingsPage() {
     const { userId } = await auth();
     if (!userId) return { sent: false, error: "ログインが必要です" };
 
-    // 現在の設定から interval_minutes を取得
+    const user = await currentUser();
+    const email = user?.emailAddresses?.[0]?.emailAddress;
+    if (!email) return { sent: false, error: "メールアドレスが取得できません" };
+
+    const userName = user?.firstName ?? user?.lastName ?? "ユーザー";
+
     const currentSettings = await getPushSettings(userId);
     const s = currentSettings.find((x) => x.axis === axis);
     const intervalMinutes = s?.interval_minutes ?? 60;
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-    const res = await fetch(`${appUrl}/api/push/test-send`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Cookie": "",
-      },
-      body: JSON.stringify({ axis, intervalMinutes }),
-    });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({})) as { error?: string };
-      return { sent: false, error: data.error ?? "送信失敗" };
-    }
-    return { sent: true };
+    return sendPushEmail({ userId, email, userName, axis, intervalMinutes });
   }
 
   return (
@@ -72,10 +64,10 @@ export default async function SettingsPage() {
           <p className="text-xs font-bold text-yellow-400">送信内容</p>
           <p className="text-xs text-gray-400 leading-relaxed">
             Checkup（16問）＋ Biopsy（64問）の合計80問から、軸ごとに毎回ランダム4問を選択して送信します。<br />
-            有効期限は送信から7日間です。テスト用に短い間隔（5分・15分）を選択できます。
+            有効期限は送信から7日間です。
           </p>
           <p className="text-xs text-amber-500">
-            ⚠️ 5分・15分などの短い間隔はVercel Pro以上が必要です。ローカルテストは「今すぐテスト送信」を使ってください。
+            ⚠️ 5分・15分などの短い間隔での自動送信はVercel Pro以上が必要です。テストは「今すぐテスト送信」ボタンをご利用ください。
           </p>
         </div>
 

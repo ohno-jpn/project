@@ -1,14 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth, currentUser, clerkClient } from "@clerk/nextjs/server";
 import { Resend } from "resend";
-import {
-  createPushToken,
-  updateNextSendAt,
-  type PushAxis,
-} from "@/lib/db/push-settings";
+import { createPushToken, updateNextSendAt, type PushAxis } from "@/lib/db/push-settings";
 import { ALL_QUESTIONS, type Axis } from "@/lib/questions";
-
-const resend = new Resend(process.env.RESEND_API_KEY!);
 
 const AXIS_TO_QUESTION_AXIS: Record<PushAxis, Axis> = {
   OH: "org_hard",
@@ -17,72 +9,63 @@ const AXIS_TO_QUESTION_AXIS: Record<PushAxis, Axis> = {
   PS: "ind_soft",
 };
 
-const AXIS_LABELS: Record<PushAxis, string> = {
+export const AXIS_LABELS: Record<PushAxis, string> = {
   OH: "OH 組織Hard（戦略・基盤）",
   OS: "OS 組織Soft（文化・風土）",
   PH: "PH 個人Hard（テクニカルスキル）",
   PS: "PS 個人Soft（スタンス・特性）",
 };
 
-export async function POST(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
-    return NextResponse.json({ error: "ログインが必要です" }, { status: 401 });
-  }
-
-  const { axis, intervalMinutes } = await req.json() as {
-    axis: PushAxis;
-    intervalMinutes: number;
-  };
-
-  const user = await currentUser();
-  const email = user?.emailAddresses?.[0]?.emailAddress;
-  if (!email) {
-    return NextResponse.json({ error: "メールアドレスが取得できません" }, { status: 400 });
-  }
-
-  const userName = user?.firstName ?? user?.lastName ?? "ユーザー";
-
-  // Checkup(level2) + Biopsy(level3) からランダムに4問選択
+/** Checkup(level2) + Biopsy(level3) からランダムに4問選択して送信する */
+export async function sendPushEmail({
+  userId,
+  email,
+  userName,
+  axis,
+  intervalMinutes,
+}: {
+  userId: string;
+  email: string;
+  userName: string;
+  axis: PushAxis;
+  intervalMinutes: number;
+}): Promise<{ sent: boolean; error?: string }> {
   const questionAxis = AXIS_TO_QUESTION_AXIS[axis];
   const pool = ALL_QUESTIONS.filter(
     (q) => (q.level === 2 || q.level === 3) && q.axis === questionAxis
   );
+  if (pool.length === 0) return { sent: false, error: "設問が見つかりません" };
+
   const shuffled = [...pool].sort(() => Math.random() - 0.5);
   const selected = shuffled.slice(0, 4);
   const questionIds = selected.map((q) => q.id);
 
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const tokenResult = await createPushToken(userId, axis, questionIds, expiresAt);
-  if ("error" in tokenResult) {
-    return NextResponse.json({ error: tokenResult.error }, { status: 500 });
-  }
+  if ("error" in tokenResult) return { sent: false, error: tokenResult.error };
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const answerUrl = `${appUrl}/push/${tokenResult.token}`;
   const axisLabel = AXIS_LABELS[axis];
 
+  const resend = new Resend(process.env.RESEND_API_KEY!);
   const { error } = await resend.emails.send({
     from: process.env.EMAIL_FROM ?? "AX-Diagnosis <onboarding@resend.dev>",
     to: email,
-    subject: `【テスト】AX-Diagnosis 定期診断：${axisLabel}`,
+    subject: `【AX-Diagnosis】定期診断：${axisLabel}`,
     html: buildPushEmailHtml(userName, axisLabel, answerUrl, expiresAt),
   });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  if (error) return { sent: false, error: error.message };
 
-  // 次回送信時刻を更新
   if (intervalMinutes > 0) {
     await updateNextSendAt(userId, axis, intervalMinutes);
   }
 
-  void clerkClient;
-  return NextResponse.json({ sent: true });
+  return { sent: true };
 }
 
-function buildPushEmailHtml(
+export function buildPushEmailHtml(
   userName: string,
   axisLabel: string,
   answerUrl: string,
@@ -91,6 +74,7 @@ function buildPushEmailHtml(
   const deadline = expiresAt.toLocaleDateString("ja-JP", {
     year: "numeric", month: "long", day: "numeric",
   });
+  const settingsUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/dashboard/settings`;
 
   return `<!DOCTYPE html>
 <html lang="ja">
@@ -120,8 +104,8 @@ function buildPushEmailHtml(
         </p>
       </div>
       <p style="font-size:12px;color:#9ca3af;margin:0;">
-        このメールはAX-Diagnosisの定期診断設定に基づき送信されています。<br>
-        設定変更は <a href="${process.env.NEXT_PUBLIC_APP_URL ?? ""}/dashboard/settings" style="color:#3b82f6;">ダッシュボード設定</a> から行えます。
+        このメールはAX-Diagnosisの定期診断設定に基づき自動送信されています。<br>
+        設定変更は <a href="${settingsUrl}" style="color:#3b82f6;">ダッシュボード設定</a> から行えます。
       </p>
     </div>
   </div>
