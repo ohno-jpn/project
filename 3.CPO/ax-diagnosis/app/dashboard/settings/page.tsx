@@ -11,11 +11,38 @@ export default async function SettingsPage() {
 
   const settings = await getPushSettings(userId);
 
-  async function saveSetting(axis: PushAxis, intervalDays: number, enabled: boolean) {
+  async function saveSetting(axis: PushAxis, intervalMinutes: number, enabled: boolean) {
     "use server";
     const { userId } = await auth();
     if (!userId) return;
-    await upsertPushSetting(userId, axis, intervalDays, enabled);
+    await upsertPushSetting(userId, axis, intervalMinutes, enabled);
+  }
+
+  async function testSendAction(axis: PushAxis): Promise<{ sent: boolean; error?: string }> {
+    "use server";
+    const { userId } = await auth();
+    if (!userId) return { sent: false, error: "ログインが必要です" };
+
+    // 現在の設定から interval_minutes を取得
+    const currentSettings = await getPushSettings(userId);
+    const s = currentSettings.find((x) => x.axis === axis);
+    const intervalMinutes = s?.interval_minutes ?? 60;
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const res = await fetch(`${appUrl}/api/push/test-send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Cookie": "",
+      },
+      body: JSON.stringify({ axis, intervalMinutes }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({})) as { error?: string };
+      return { sent: false, error: data.error ?? "送信失敗" };
+    }
+    return { sent: true };
   }
 
   return (
@@ -37,18 +64,26 @@ export default async function SettingsPage() {
           <h1 className="text-2xl font-extrabold text-white mb-2">定期プッシュ診断の設定</h1>
           <p className="text-sm text-gray-400 leading-relaxed">
             各軸の設定を有効にすると、選択した間隔で診断問題がメールで届きます。<br />
-            メール内のリンクから回答すると結果がダッシュボードに反映されます。
+            Checkup・Biopsyの設問からランダムに4問が選ばれて送信されます。
           </p>
         </div>
 
-        <div className="bg-white/5 rounded-2xl border border-white/10 p-5 mb-8">
-          <p className="text-xs font-bold text-yellow-400 mb-1">メール送信について</p>
+        <div className="bg-white/5 rounded-2xl border border-white/10 p-5 mb-8 space-y-2">
+          <p className="text-xs font-bold text-yellow-400">送信内容</p>
           <p className="text-xs text-gray-400 leading-relaxed">
-            各軸のCheckup設問（4問）をメールで配信します。有効期限は送信から7日間です。
+            Checkup（16問）＋ Biopsy（64問）の合計80問から、軸ごとに毎回ランダム4問を選択して送信します。<br />
+            有効期限は送信から7日間です。テスト用に短い間隔（5分・15分）を選択できます。
+          </p>
+          <p className="text-xs text-amber-500">
+            ⚠️ 5分・15分などの短い間隔はVercel Pro以上が必要です。ローカルテストは「今すぐテスト送信」を使ってください。
           </p>
         </div>
 
-        <SettingsForm settings={settings} saveAction={saveSetting} />
+        <SettingsForm
+          settings={settings}
+          saveAction={saveSetting}
+          testSendAction={testSendAction}
+        />
       </main>
     </div>
   );

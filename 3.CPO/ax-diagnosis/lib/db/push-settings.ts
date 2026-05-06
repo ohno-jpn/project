@@ -6,7 +6,7 @@ export interface PushSetting {
   id: string;
   clerk_user_id: string;
   axis: PushAxis;
-  interval_days: number;
+  interval_minutes: number;
   enabled: boolean;
   next_send_at: string | null;
   created_at: string;
@@ -38,20 +38,20 @@ export async function getPushSettings(userId: string): Promise<PushSetting[]> {
 export async function upsertPushSetting(
   userId: string,
   axis: PushAxis,
-  intervalDays: number,
+  intervalMinutes: number,
   enabled: boolean
 ): Promise<void> {
   const supabase = createServerClient();
   const nextSendAt =
-    enabled && intervalDays > 0
-      ? new Date(Date.now() + intervalDays * 24 * 60 * 60 * 1000).toISOString()
+    enabled && intervalMinutes > 0
+      ? new Date(Date.now() + intervalMinutes * 60 * 1000).toISOString()
       : null;
 
   await supabase.from("push_settings").upsert(
     {
       clerk_user_id: userId,
       axis,
-      interval_days: intervalDays,
+      interval_minutes: intervalMinutes,
       enabled,
       next_send_at: nextSendAt,
       updated_at: new Date().toISOString(),
@@ -68,6 +68,16 @@ export async function getPushSettingsDue(): Promise<PushSetting[]> {
     .eq("enabled", true)
     .not("next_send_at", "is", null)
     .lte("next_send_at", new Date().toISOString());
+  return (data as PushSetting[]) ?? [];
+}
+
+export async function getPushSettingsForUser(userId: string): Promise<PushSetting[]> {
+  const supabase = createServerClient();
+  const { data } = await supabase
+    .from("push_settings")
+    .select("*")
+    .eq("clerk_user_id", userId)
+    .eq("enabled", true);
   return (data as PushSetting[]) ?? [];
 }
 
@@ -116,13 +126,13 @@ export async function markTokenAnswered(
 export async function updateNextSendAt(
   userId: string,
   axis: PushAxis,
-  intervalDays: number
+  intervalMinutes: number
 ): Promise<void> {
   const supabase = createServerClient();
   await supabase
     .from("push_settings")
     .update({
-      next_send_at: new Date(Date.now() + intervalDays * 24 * 60 * 60 * 1000).toISOString(),
+      next_send_at: new Date(Date.now() + intervalMinutes * 60 * 1000).toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq("clerk_user_id", userId)
