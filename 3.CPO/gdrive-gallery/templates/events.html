@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}イベント一覧 — フォトギャラリー{% endblock %}
+
+{% block nav_actions %}
+<button id="sync-btn" class="btn btn-sm btn-outline-light">同期</button>
+<button id="sign-out-btn" class="btn btn-sm btn-outline-danger">ログアウト</button>
+{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">イベント一覧</h2>
+
+<!-- 検索フォーム -->
+<form class="row g-2 mb-4" method="get">
+  <div class="col-sm-5">
+    <input type="text" name="q" class="form-control" placeholder="キーワード検索"
+           value="{{ q }}">
+  </div>
+  <div class="col-sm-3">
+    <input type="date" name="from" class="form-control" value="{{ date_from }}">
+  </div>
+  <div class="col-sm-3">
+    <input type="date" name="to" class="form-control" value="{{ date_to }}">
+  </div>
+  <div class="col-sm-1">
+    <button type="submit" class="btn btn-primary w-100">検索</button>
+  </div>
+</form>
+
+{% if events %}
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+  {% for event in events %}
+  <div class="col">
+    <a href="{{ url_for('event_detail', folder_id=event.folder_id) }}" class="text-decoration-none">
+      <div class="card h-100 event-card shadow-sm">
+        <div class="event-thumb-wrap">
+          {% if event.cover_thumbnail_url %}
+          <img src="{{ event.cover_thumbnail_url }}" class="event-thumb" loading="lazy"
+               alt="{{ event.event_title }}">
+          {% else %}
+          <div class="event-thumb-placeholder">📷</div>
+          {% endif %}
+        </div>
+        <div class="card-body p-3">
+          <p class="text-muted small mb-1">{{ event.event_date.strftime('%Y年%m月%d日') }}</p>
+          <h6 class="card-title mb-1 fw-bold">{{ event.event_title }}</h6>
+          <p class="text-muted small mb-0">{{ event.photo_count }} 枚</p>
+        </div>
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center text-muted py-5">
+  <div class="fs-1 mb-3">📂</div>
+  <p>イベントが見つかりません。「同期」ボタンでGoogle Driveから取り込んでください。</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.addEventListener('load', async () => {
+    const clerk = window.Clerk;
+    await clerk.load();
+
+    if (!clerk.user) {
+      window.location.href = '/login';
+      return;
+    }
+
+    document.getElementById('sign-out-btn').addEventListener('click', async () => {
+      await clerk.signOut();
+      window.location.href = '/login';
+    });
+
+    document.getElementById('sync-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('sync-btn');
+      btn.disabled = true;
+      btn.textContent = '同期中...';
+      try {
+        const token = await clerk.session.getToken();
+        const res = await fetch('/admin/sync', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token },
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+          alert(`同期完了: ${data.events} イベント / ${data.photos} 枚`);
+          window.location.reload();
+        } else {
+          alert('同期エラー: ' + data.message);
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '同期';
+      }
+    });
+  });
+</script>
+{% endblock %}

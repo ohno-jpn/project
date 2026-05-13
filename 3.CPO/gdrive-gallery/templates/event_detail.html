@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}{{ event.event_title }} — フォトギャラリー{% endblock %}
+
+{% block nav_actions %}
+<button id="sign-out-btn" class="btn btn-sm btn-outline-danger">ログアウト</button>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('events') }}">イベント一覧</a></li>
+    <li class="breadcrumb-item active">{{ event.event_title }}</li>
+  </ol>
+</nav>
+
+<div class="d-flex align-items-baseline gap-3 mb-4">
+  <h2 class="mb-0">{{ event.event_title }}</h2>
+  <span class="text-muted">{{ event.event_date.strftime('%Y年%m月%d日') }}</span>
+  <span class="badge bg-secondary">{{ event.photo_count }} 枚</span>
+</div>
+
+{% if photos %}
+<div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-2">
+  {% for photo in photos %}
+  <div class="col">
+    <a href="{{ photo.web_view_url }}" class="glightbox"
+       data-gallery="event-gallery"
+       data-title="{{ photo.filename }}">
+      <div class="photo-thumb-wrap">
+        <img src="{{ photo.thumbnail_url }}" class="photo-thumb" loading="lazy"
+             alt="{{ photo.filename }}">
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center text-muted py-5">
+  <div class="fs-1 mb-3">📷</div>
+  <p>写真がありません。</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.addEventListener('load', async () => {
+    const clerk = window.Clerk;
+    await clerk.load();
+
+    if (!clerk.user) {
+      window.location.href = '/login';
+      return;
+    }
+
+    document.getElementById('sign-out-btn').addEventListener('click', async () => {
+      await clerk.signOut();
+      window.location.href = '/login';
+    });
+
+    GLightbox({ selector: '.glightbox', touchNavigation: true, loop: true });
+  });
+</script>
+{% endblock %}

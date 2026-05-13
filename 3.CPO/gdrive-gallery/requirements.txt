@@ -1,0 +1,9 @@
+flask>=3.0
+flask-sqlalchemy>=3.1
+python-dotenv>=1.0
+google-api-python-client>=2.120
+google-auth-httplib2>=0.2
+google-auth-oauthlib>=1.2
+requests>=2.31
+PyJWT>=2.8
+cryptography>=42.0
